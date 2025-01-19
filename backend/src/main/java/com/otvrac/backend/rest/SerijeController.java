@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/serije")
@@ -33,7 +34,10 @@ public class SerijeController {
     @GetMapping
     public ResponseEntity<?> getAllSerije() {
         List<Serije> serije = serijeService.getAllSerije();
-        return ResponseEntity.ok(new ResponseWrapper("OK", "Fetched whole database", serije));
+        List<Map<String, Object>> jsonLdList = serije.stream()
+                .map(Serije::toJsonLd)
+                .toList();
+        return ResponseEntity.ok(jsonLdList);
     }
 
     @GetMapping("/{id}")
@@ -46,7 +50,7 @@ public class SerijeController {
         Serije serija = serijeService.getSerijaById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Serija with ID " + id + " not found"));
 
-        return ResponseEntity.ok(new ResponseWrapper("OK", "Fetched serija with ID: " + id, serija));
+        return ResponseEntity.ok(serija.toJsonLd());
     }
 
     @GetMapping("/{id}/epizode")
@@ -59,19 +63,23 @@ public class SerijeController {
         Serije serija = serijeService.getSerijaById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Serija with ID " + id + " not found"));
 
-        return ResponseEntity.ok(new ResponseWrapper("OK", "Fetched epizode for serija ID: " + id, serija.getEpizode()));
+        List<Map<String, Object>> jsonLdList = serija.getEpizode().stream()
+                .map(Epizode::toJsonLd)
+                .toList();
+
+        return ResponseEntity.ok(jsonLdList);
     }
 
     @PostMapping("/create")
     public ResponseEntity<?> createSerija(@RequestBody Serije serija) {
         Serije novaSerija = serijeService.createSerija(serija);
-        return ResponseEntity.status(201).body(new ResponseWrapper("Created", "New serija created successfully", novaSerija));
+        return ResponseEntity.status(201).body(novaSerija.toJsonLd());
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateSerija(@PathVariable Integer id, @RequestBody Serije updatedSerija) {
         Serije serija = serijeService.updateSerija(id, updatedSerija);
-        return ResponseEntity.ok(new ResponseWrapper("OK", "Serija updated successfully", serija));
+        return ResponseEntity.ok(serija.toJsonLd());
     }
 
     @DeleteMapping("/{id}")
@@ -89,7 +97,11 @@ public class SerijeController {
                 ? serijeService.getAllSerije()
                 : serijeService.getSerijeWithFilteredAttributes(attribute, filter);
 
-        return ResponseEntity.ok(new ResponseWrapper("OK", "Fetched filtered results", serije));
+        List<Map<String, Object>> jsonLdList = serije.stream()
+                .map(Serije::toJsonLd)
+                .toList();
+
+        return ResponseEntity.ok(jsonLdList);
     }
 
     @GetMapping("/download/json")
@@ -98,8 +110,11 @@ public class SerijeController {
             @RequestParam(required = false, defaultValue = "") String filter) throws IOException {
 
         List<Serije> serijeList = serijeService.search(filter, attribute);
+        List<Map<String, Object>> jsonLdList = serijeList.stream()
+                .map(Serije::toJsonLd)
+                .toList();
 
-        String json = jacksonObjectMapper.writeValueAsString(serijeList);
+        String json = jacksonObjectMapper.writeValueAsString(jsonLdList);
 
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(json.getBytes());
 

@@ -63,7 +63,7 @@ const Datatable = () => {
                 const response = await axios.get(`http://localhost:8080/api/serije/search`, {
                     params: { attribute, filter }
                 });
-                setSerije(response.data.response);
+                setSerije(response.data);
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
@@ -102,7 +102,6 @@ const Datatable = () => {
                     <option value="epizode.datumEmitiranja">Datum emitiranja</option>
                     <option value="epizode.trajanje">Trajanje</option>
                     <option value="epizode.ocjena">Ocjena epizode</option>
-                    {/* Dodata opcija */}
                     <option value="epizode.scenarist">Scenarist</option>
                     <option value="epizode.redatelj">Redatelj</option>
                 </select>
@@ -132,9 +131,9 @@ const Datatable = () => {
                 </tr>
                 </thead>
                 <tbody>
-                {Array.isArray(serije) && serije.map(serija =>
-                    serija.epizode.map(epizoda => (
-                        <tr key={`${serija.id}-${epizoda.id}`}>
+                {Array.isArray(serije) && serije.map((serija, serijaIndex) =>
+                    serija.epizode.map((epizoda, epizodaIndex) => (
+                        <tr key={`${serija.id || serijaIndex}-${epizoda.id || epizodaIndex}`}>
                             <td>{serija.naslov}</td>
                             <td>{serija.zanr}</td>
                             <td>{serija.godinaIzlaska}</td>

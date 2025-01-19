@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -49,4 +51,19 @@ public class Epizode {
 
     @Column(name = "redatelj")
     private String redatelj;
+
+    public Map<String, Object> toJsonLd() {
+        Map<String, Object> jsonLd = new LinkedHashMap<>();
+        jsonLd.put("@type", "Epizoda");
+        jsonLd.put("nazivEpizode", this.nazivEpizode);
+        jsonLd.put("sezona", this.sezona);
+        jsonLd.put("brojEpizode", this.brojEpizode);
+        jsonLd.put("datumEmitiranja", this.datumEmitiranja);
+        jsonLd.put("trajanje", this.trajanje + " minutes");
+        jsonLd.put("ocjena", this.ocjena);
+        jsonLd.put("scenarist", this.scenarist);
+        jsonLd.put("redatelj", this.redatelj);
+
+        return jsonLd;
+    }
 }

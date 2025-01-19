@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/epizode")
@@ -25,7 +27,12 @@ public class EpizodeController {
     public ResponseEntity<?> getAllEpizode() {
         List<Epizode> epizode = epizodeService.getAllEpizode();
 
-        return ResponseEntity.ok(new ResponseWrapper("OK", "Fetched all epizode", epizode));
+        // Convert each Epizoda object to JSON-LD format
+        List<Map<String, Object>> jsonLdEpizode = epizode.stream()
+                .map(Epizode::toJsonLd)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ResponseWrapper("OK", "Fetched all epizode", jsonLdEpizode));
     }
 
     @GetMapping("/{id}")
@@ -38,6 +45,7 @@ public class EpizodeController {
         Epizode epizoda = epizodeService.getEpizodaById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Epizoda with ID " + id + " not found"));
 
-        return ResponseEntity.ok(new ResponseWrapper("OK", "Fetched epizoda with ID: " + id, epizoda));
+        // Return the Epizoda object in JSON-LD format
+        return ResponseEntity.ok(new ResponseWrapper("OK", "Fetched epizoda with ID: " + id, epizoda.toJsonLd()));
     }
 }

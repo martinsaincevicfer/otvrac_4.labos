@@ -5,10 +5,7 @@ import jakarta.persistence.*;
 import jakarta.transaction.Transactional;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Data
 @AllArgsConstructor
@@ -52,4 +49,27 @@ public class Serije {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "serija", fetch = FetchType.EAGER)
     @JsonManagedReference("serija-epizode")
     private List<Epizode> epizode = new ArrayList<>();
+
+    public Map<String, Object> toJsonLd() {
+        Map<String, Object> jsonLd = new LinkedHashMap<>();
+        jsonLd.put("@context", "http://schema.org");
+        jsonLd.put("@type", "Serija");
+        jsonLd.put("@id", "/api/serije/" + this.id);
+        jsonLd.put("naslov", this.naslov);
+        jsonLd.put("zanr", this.zanr);
+        jsonLd.put("godinaIzlaska", this.godinaIzlaska);
+        jsonLd.put("ocjena", this.ocjena);
+        jsonLd.put("brojSezona", this.brojSezona);
+        jsonLd.put("jezik", this.jezik);
+        jsonLd.put("autor", this.autor);
+        jsonLd.put("mreza", this.mreza);
+
+        List<Map<String, Object>> epizodeList = new ArrayList<>();
+        for (Epizode epizoda : this.epizode) {
+            epizodeList.add(epizoda.toJsonLd());
+        }
+        jsonLd.put("epizode", epizodeList);
+
+        return jsonLd;
+    }
 }
