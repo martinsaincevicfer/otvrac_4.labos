@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import FileDownloadButton from "./FileDownloadButton.jsx";
 import { useAuth0 } from '@auth0/auth0-react';
+import RefreshFilesButton from "./RefreshFilesButton.jsx";
+import Header from "./Header.jsx";
 
 const Index = () => {
-    const { loginWithRedirect, logout, isAuthenticated, error } = useAuth0();
+    const { isAuthenticated, error } = useAuth0();
     const [authState, setAuthState] = useState(isAuthenticated);
 
     useEffect(() => {
-        console.log('isAuthenticated: ', isAuthenticated);
         setAuthState(isAuthenticated);
     }, [isAuthenticated]);
 
@@ -20,18 +21,13 @@ const Index = () => {
 
     return (
         <>
-            <a href="http://localhost:5173/datatable">Datatable</a>
+            <Header />
             <FileDownloadButton fileName={"serije.csv"} />
             <FileDownloadButton fileName={"serije.json"} />
             <div>
-                {!authState ? (
-                    <button onClick={() => loginWithRedirect()}>Log in</button>
-                ) : (
-                    <>
-                        <button onClick={() => logout({ returnTo: window.location.origin + "/index" })}>Log out</button>
-                        <a href="http://localhost:5173/profile">Your profile</a>
-                    </>
-                )}
+                {authState ? (
+                    <RefreshFilesButton />
+                ) : null }
             </div>
 
             <h1>README</h1>

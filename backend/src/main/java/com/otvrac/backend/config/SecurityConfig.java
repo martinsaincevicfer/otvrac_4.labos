@@ -24,8 +24,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/**").authenticated()
-                        .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll() // Allow OPTIONS for CORS preflight
+                        .requestMatchers(HttpMethod.POST, "/refresh-files").authenticated()
                         .anyRequest().permitAll()
                 ).oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(Customizer.withDefaults())

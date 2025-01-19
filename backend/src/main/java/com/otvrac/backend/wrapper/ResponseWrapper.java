@@ -6,7 +6,6 @@ public class ResponseWrapper {
     private String status;
     private String message;
     private Object response;
-    private List<Link> links;
 
     public ResponseWrapper(String status, String message, Object response) {
         this.status = status;
@@ -37,13 +36,5 @@ public class ResponseWrapper {
 
     public void setResponse(Object response) {
         this.response = response;
-    }
-
-    public List<Link> getLinks() {
-        return links;
-    }
-
-    public void setLinks(List<Link> links) {
-        this.links = links;
     }
 }

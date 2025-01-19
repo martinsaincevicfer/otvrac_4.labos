@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.otvrac.backend.domain.Epizode;
 import com.otvrac.backend.domain.Serije;
 import com.otvrac.backend.service.SerijeService;
-import com.otvrac.backend.wrapper.Link;
 import com.otvrac.backend.wrapper.ResponseWrapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.apache.commons.csv.CSVFormat;
@@ -16,9 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/serije")
@@ -36,20 +33,7 @@ public class SerijeController {
     @GetMapping
     public ResponseEntity<?> getAllSerije() {
         List<Serije> serije = serijeService.getAllSerije();
-
-        List<Object> serijeWithLinks = Collections.singletonList(serije.stream()
-                .map(serija -> {
-                    List<Link> links = List.of(
-                            new Link("/api/serije/" + serija.getId(), "self", "GET"),
-                            new Link("/api/serije/" + serija.getId() + "/epizode", "epizode", "GET")
-                    );
-                    ResponseWrapper response = new ResponseWrapper("OK", "Fetched serija", serija);
-                    response.setLinks(links);
-                    return response;
-                })
-                .toList());
-
-        return ResponseEntity.ok(new ResponseWrapper("OK", "Fetched whole database", serijeWithLinks));
+        return ResponseEntity.ok(new ResponseWrapper("OK", "Fetched whole database", serije));
     }
 
     @GetMapping("/{id}")
@@ -62,16 +46,7 @@ public class SerijeController {
         Serije serija = serijeService.getSerijaById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Serija with ID " + id + " not found"));
 
-        List<Link> links = List.of(
-                new Link("/api/serije/" + id, "self", "GET"),
-                new Link("/api/serije/" + id + "/epizode", "epizode", "GET"),
-                new Link("/api/serije/" + id, "update", "PUT"),
-                new Link("/api/serije/" + id, "delete", "DELETE")
-        );
-
-        ResponseWrapper response = new ResponseWrapper("OK", "Fetched serija with ID: " + id, serija);
-        response.setLinks(links);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ResponseWrapper("OK", "Fetched serija with ID: " + id, serija));
     }
 
     @GetMapping("/{id}/epizode")
@@ -84,38 +59,19 @@ public class SerijeController {
         Serije serija = serijeService.getSerijaById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Serija with ID " + id + " not found"));
 
-        List<Epizode> epizode = serija.getEpizode();
-
-        return ResponseEntity.ok(new ResponseWrapper("OK", "Fetched epizode for serija ID: " + id, epizode));
+        return ResponseEntity.ok(new ResponseWrapper("OK", "Fetched epizode for serija ID: " + id, serija.getEpizode()));
     }
 
     @PostMapping("/create")
     public ResponseEntity<?> createSerija(@RequestBody Serije serija) {
         Serije novaSerija = serijeService.createSerija(serija);
-
-        List<Link> links = List.of(
-                new Link("/api/serije/" + novaSerija.getId(), "self", "GET"),
-                new Link("/api/serije/" + novaSerija.getId(), "update", "PUT"),
-                new Link("/api/serije/" + novaSerija.getId(), "delete", "DELETE")
-        );
-
-        ResponseWrapper response = new ResponseWrapper("Created", "New serija created successfully", novaSerija);
-        response.setLinks(links);
-        return ResponseEntity.status(201).body(response);
+        return ResponseEntity.status(201).body(new ResponseWrapper("Created", "New serija created successfully", novaSerija));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateSerija(@PathVariable Integer id, @RequestBody Serije updatedSerija) {
         Serije serija = serijeService.updateSerija(id, updatedSerija);
-
-        List<Link> links = List.of(
-                new Link("/api/serije/" + id, "self", "GET"),
-                new Link("/api/serije/" + id, "delete", "DELETE")
-        );
-
-        ResponseWrapper response = new ResponseWrapper("OK", "Serija updated successfully", serija);
-        response.setLinks(links);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ResponseWrapper("OK", "Serija updated successfully", serija));
     }
 
     @DeleteMapping("/{id}")
@@ -194,5 +150,55 @@ public class SerijeController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"serije.csv\"")
                 .body(new InputStreamResource(byteArrayInputStream));
+    }
+
+    @PostMapping("/refresh-files")
+    public ResponseEntity<?> refreshFiles() {
+        try {
+            // Fetch data from the database
+            List<Serije> serijeList = serijeService.getAllSerije();
+
+            // Create CSV file
+            try (Writer writer = new FileWriter("./src/main/resources/static/serije.csv");
+                 CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(
+                         "Id", "Naslov", "Zanr", "Godina Izlaska", "Ocjena", "Broj Sezona", "Jezik", "Autor", "Mreza",
+                         "Naziv Epizode", "Sezona", "Broj Epizode", "Datum Emitiranja", "Trajanje", "Ocjena Epizode",
+                         "Scenarist", "Redatelj"))) {
+                for (Serije serija : serijeList) {
+                    for (Epizode epizoda : serija.getEpizode()) {
+                        csvPrinter.printRecord(
+                                serija.getId(),
+                                serija.getNaslov(),
+                                serija.getZanr(),
+                                serija.getGodinaIzlaska(),
+                                serija.getOcjena(),
+                                serija.getBrojSezona(),
+                                serija.getJezik(),
+                                serija.getAutor(),
+                                serija.getMreza(),
+                                epizoda.getNazivEpizode(),
+                                epizoda.getSezona(),
+                                epizoda.getBrojEpizode(),
+                                epizoda.getDatumEmitiranja(),
+                                epizoda.getTrajanje(),
+                                epizoda.getOcjena(),
+                                epizoda.getScenarist(),
+                                epizoda.getRedatelj()
+                        );
+                    }
+                }
+            }
+
+            // Create JSON file
+            String json = jacksonObjectMapper.writeValueAsString(serijeList);
+            try (Writer writer = new FileWriter("./src/main/resources/static/serije.json")) {
+                writer.write(json);
+            }
+
+            return ResponseEntity.ok(new ResponseWrapper("OK", "Files refreshed successfully", null));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(new ResponseWrapper("Error", "Failed to refresh files", null));
+        }
     }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { withAuthenticationRequired, useAuth0 } from '@auth0/auth0-react';
+import Header from "./Header.jsx";
+import '../styles/datatable.css';
 
 const downloadCSV = (data) => {
     const headers = [
@@ -48,8 +49,6 @@ const downloadJSON = (data) => {
 };
 
 const Datatable = () => {
-    const { getAccessTokenSilently } = useAuth0();
-
     const params = new URLSearchParams(window.location.search);
     const initialAttribute = params.get('attribute') || 'sve';
     const initialFilter = params.get('filter') || '';
@@ -61,12 +60,8 @@ const Datatable = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const token = await getAccessTokenSilently();
                 const response = await axios.get(`http://localhost:8080/api/serije/search`, {
-                    params: { attribute, filter },
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                    params: { attribute, filter }
                 });
                 setSerije(response.data.response);
             } catch (error) {
@@ -74,10 +69,12 @@ const Datatable = () => {
             }
         };
         fetchData();
-    }, [attribute, filter, getAccessTokenSilently]);
+    }, [attribute, filter]);
 
     return (
         <div>
+            <Header />
+
             <h1>Prikaz serija</h1>
             <form onSubmit={(e) => e.preventDefault()}>
                 <label htmlFor="pretragaPolje">Polje za pretragu:</label>
@@ -168,6 +165,4 @@ const Datatable = () => {
     );
 };
 
-export default withAuthenticationRequired(Datatable, {
-    onRedirecting: () => <div>Loading...</div>,
-});
+export default Datatable;

@@ -1,0 +1,6 @@
+body > #root {
+    margin: 0;    !important;
+    padding: 0;   !important;
+    min-width: 96vw;
+    min-height: 100vh;
+}
